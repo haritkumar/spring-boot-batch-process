@@ -7,6 +7,7 @@ import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider;
 import org.springframework.batch.item.database.JdbcBatchItemWriter;
@@ -18,9 +19,10 @@ import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
 import org.springframework.batch.item.file.mapping.DefaultLineMapper;
 import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.FileSystemResource;
 
 import com.batch.entity.Industry;
 
@@ -35,13 +37,15 @@ public class BatchConfiguration {
 	public StepBuilderFactory stepBuilderFactory;
 
 	@Bean
-	public FlatFileItemReader<Industry> reader() {
+	@StepScope
+	public FlatFileItemReader<Industry> reader(@Value("#{jobParameters[csvPath]}") String csvPath) {
 		return new FlatFileItemReaderBuilder<Industry>()
 				.name("induatryItemReader")
-				.resource(new ClassPathResource("batch.csv"))
+				.resource(new FileSystemResource(csvPath))
 				.delimited()
 				.names(new String[] { "year", "industry_code_ANZSIC", "industry_name_ANZSIC", "rme_size_grp", "variable", "value", "unit" })
 				.lineMapper(lineMapper())
+				.linesToSkip(1)//skip header line
 				.fieldSetMapper(new BeanWrapperFieldSetMapper<Industry>() {{
 						setTargetType(Industry.class);
 					}})
@@ -79,15 +83,15 @@ public class BatchConfiguration {
     public Step step1(JdbcBatchItemWriter<Industry> writer) {
         return stepBuilderFactory.get("step1")
                 .<Industry, Industry> chunk(100)
-                .reader(reader())
+                .reader(reader(null))
                 .processor(processor())
                 .writer(writer)
                 .build();
     }
 	
 	
-	@Bean
-    public Job importVoltageJob(NotificationListener listener, Step step1) {
+	@Bean("importIndustryJob")
+    public Job importIndustryJob(NotificationListener listener, Step step1) {
         return jobBuilderFactory.get("importIndustryJob")
                 .incrementer(new RunIdIncrementer())
                 .listener(listener)
