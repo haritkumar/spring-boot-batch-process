@@ -47,7 +47,7 @@ public class RestEndpoints {
 		logger.info("size: " + FileUtil.readableFileSize(size));
 
 		try {
-			String n_name = csvDir+System.currentTimeMillis()+"_"+originalName;
+			String n_name = csvDir+"UP_"+System.currentTimeMillis()+"_"+originalName;
 			File write_file = new File(n_name);
 			OutputStream out = new FileOutputStream(write_file);
 			out.write(file.getBytes());
