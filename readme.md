@@ -12,3 +12,6 @@ Upload batch.csv using any rest client
 
 ![Upload](asset/1.png)
 ![Upload](asset/2.png)
+
+### DB structure after running batch job
+![Upload](asset/3.png)
